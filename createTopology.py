@@ -106,7 +106,25 @@ def createAngles (atomInfo, angleInfo, bondInfo):
 	for bondLine in bondInfo:
 		connectedAtoms = findConnectedAtoms (bondLine ['bondAtom1'], bondLine ['bondAtom2'], bondInfo, connectedAtoms)
 	
-	# print (connectedAtoms)
+	def findAngleType (firstAtomType, secondAtomType, thirdAtomType, angleTypeArr):
+		if (firstAtomType <= thirdAtomType):
+			ascFirstAtomType = firstAtomType
+			ascThirdAtomType = thirdAtomType
+		else:
+			ascFirstAtomType = thirdAtomType
+			ascThirdAtomType = firstAtomType
+
+		assignedType = 0
+
+		for types in angleTypeArr:
+			if (ascFirstAtomType == types ['atom1'] and secondAtomType == types ['atom2'] and ascThirdAtomType == types ['atom3']):
+				assignedType = types ['angleType']
+
+		if (assignedType == 0):
+			assignedType = len (angleTypeArr)
+			angleTypeArr.append ({'atom1': ascFirstAtomType, 'atom2': secondAtomType, 'atom3': ascThirdAtomType, 'angleType': len (angleTypeArr)})
+
+		return assignedType, angleTypeArr
 
 	# Creating angleInfo
 	for atom in connectedAtoms:
@@ -116,14 +134,55 @@ def createAngles (atomInfo, angleInfo, bondInfo):
 				firstAtomType = atomInfo [int (i [0]) - 1]['atomType']
 				secondAtomType = atomInfo [int (atom) - 1]['atomType']
 				thirdAtomType = atomInfo [int (i [1]) - 1]['atomType']
-				angleInfo.append ({'sino': sino_angle, 'angleType': 0, 'angleAtom1': i[0], 'angleAtom2': atom, 'angleAtom3': i[1], 'angleAtom1Type': firstAtomType, 'angleAtom2Type': secondAtomType, 'angleAtom3Type': thirdAtomType})
-			# print (atom, connectedAtoms [atom])
-
-	for angle in angleInfo:
-		print (angle)
-		sleep (1)
+				angleType, angleTypeArr = findAngleType (firstAtomType, secondAtomType, thirdAtomType, angleTypeArr)
+				angleInfo.append ({'sino': sino_angle, 'angleType': angleType, 'angleAtom1': i [0], 'angleAtom2': atom, 'angleAtom3': i [1], 'angleAtom1Type': firstAtomType, 'angleAtom2Type': secondAtomType, 'angleAtom3Type': thirdAtomType})
+				sino_angle += 1
 
 	return angleInfo
+
+def createDihedrals (atomInfo, dihedralInfo, angleInfo, bondInfo):
+	# dihInfo contains sino, dihType, dihAtom1, dihAtom2, dihAtom3, dihAtom4, dihAtom1Type, dihAtom2Type, dihAtom3Type, dihAtom4Type
+	dihTypeArr = []
+	sino_dih = 1
+
+	dihTypeArr.append ({'atom1': 0, 'atom2': 0, 'atom3': 0, 'atom4': 0, 'dihType': 0})
+
+	def findDihType (firstAtomType, secondAtomType, thirdAtomType, fourthAtomType, dihTypeArr):
+		if (firstAtomType < fourthAtomType):
+			ascFirstAtomType = firstAtomType
+			ascSecondAtomType = secondAtomType
+			ascThirdAtomType = thirdAtomType
+			ascFourthAtomType = fourthAtomType
+		else:
+			ascFirstAtomType = fourthAtomType
+			ascSecondAtomType = thirdAtomType
+			ascThirdAtomType = secondAtomType
+			ascFourthAtomType = firstAtomType
+
+		assignedType = 0
+
+		for types in dihTypeArr:
+			if (ascFirstAtomType == types ['atom1'] and ascSecondAtomType == types ['atom2'] and ascThirdAtomType == types ['atom3'] and ascFourthAtomType == types ['atom4']):
+				assignedType = types ['dihType']
+
+		if (assignedType == 0):
+			assignedType = len (dihTypeArr)
+			dihTypeArr.append ({'atom1': ascFirstAtomType, 'atom2': ascSecondAtomType, 'atom3': ascThirdAtomType, 'atom4': ascFourthAtomType, 'dihType': len (dihTypeArr)})
+
+		return assignedType, dihTypeArr
+
+	for x in range (0, 360, 1):
+		for y in range (x + 1, 360, 1):
+			if (angleInfo [x]['angleAtom2'] == angleInfo [y]['angleAtom1'] and angleInfo [x]['angleAtom3'] == angleInfo [y]['angleAtom2']):
+				firstAtomType = atomInfo [int (angleInfo [x]['angleAtom1']) - 1]['atomType']
+				secondAtomType = atomInfo [int (angleInfo [x]['angleAtom2']) - 1]['atomType']
+				thirdAtomType = atomInfo [int (angleInfo [x]['angleAtom3']) - 1]['atomType']
+				fourthAtomType = atomInfo [int (angleInfo [y]['angleAtom3']) - 1]['atomType']
+				dihType, dihTypeArr = findDihType (firstAtomType, secondAtomType, thirdAtomType, fourthAtomType, dihTypeArr)
+				dihedralInfo.append ({'sino': sino_dih, 'dihType': dihType, 'dihAtom1': angleInfo [x]['angleAtom1'], 'dihAtom2': angleInfo [x]['angleAtom2'], 'dihAtom3': angleInfo [x]['angleAtom3'], 'dihAtom4': angleInfo [y]['angleAtom3'], 'dihAtom1Type': firstAtomType, 'dihAtom2Type': secondAtomType, 'dihAtom3Type': thirdAtomType, 'dihAtom4Type': fourthAtomType})
+				sino_dih += 1
+
+	return dihedralInfo
 
 def main():
 	atomInfo = []
@@ -134,10 +193,15 @@ def main():
 	atomInfo = readAtomInfo ("atomEntries.testing", atomInfo)
 	bondInfo = createBonds (atomInfo, bondInfo)
 	angleInfo = createAngles (atomInfo, angleInfo, bondInfo)
-	# dihedralInfo = createDihedrals (dihedralInfo, angleInfo, bondInfo)
+	dihedralInfo = createDihedrals (atomInfo, dihedralInfo, angleInfo, bondInfo)
 
-	# for bond in bondInfo:
-	# 	print (bond)
+	# for angle in angleInfo:
+	# 	print (angle)
+	# 	sleep (1)
+
+	for dihedralLine in dihedralInfo:
+		print (dihedralLine)
+		sleep (1)
 
 if __name__ == '__main__':
 	main()

@@ -11,12 +11,17 @@ def extract_numbers (line):
 			pass
 
 def readAtomInfo (inputFileName, atomInfo):
+	atomTypeArr = []
 	with open ("atomEntries.testing", "r") as inputFile:
 		for line in inputFile:
 			lineArray = list (extract_numbers (line))
 			atomInfo.append ({'sino': int (lineArray[0]), 'molType': int (lineArray[1]), 'atomType': int (lineArray[2]), 'charge': int (lineArray[3]), 'x': float (lineArray[4]), 'y': float (lineArray[5]), 'z': float (lineArray[6]), 'bondAtom1': int (lineArray[7]), 'bondAtom2': int (lineArray[8]), 'bondAtom3': int (lineArray[9]), 'bondAtom4': int (lineArray[10])})
 
-	return atomInfo
+	for atomLine in atomInfo:
+		if (atomLine ['atomType'] not in atomTypeArr):
+			atomTypeArr.append (atomLine ['atomType'])
+
+	return atomInfo, atomTypeArr
 
 def createBonds (atomInfo, bondInfo):
 	lineArray = []
@@ -73,7 +78,7 @@ def createBonds (atomInfo, bondInfo):
 		bondInfo, bondTypeArr, sino_bond = addBond (atomLine, atomInfo, 'bondAtom3', bondInfo, sino_bond, bondTypeArr)
 		bondInfo, bondTypeArr, sino_bond = addBond (atomLine, atomInfo, 'bondAtom4', bondInfo, sino_bond, bondTypeArr)
 
-	return bondInfo
+	return bondInfo, bondTypeArr
 
 def createAngles (atomInfo, angleInfo, bondInfo):
 	# angleInfo contains sino, angleType, angleAtom1, angleAtom2, angleAtom3, angleAtom1Type, angleAtom2Type, angleAtom3Type
@@ -138,7 +143,7 @@ def createAngles (atomInfo, angleInfo, bondInfo):
 				angleInfo.append ({'sino': sino_angle, 'angleType': angleType, 'angleAtom1': i [0], 'angleAtom2': atom, 'angleAtom3': i [1], 'angleAtom1Type': firstAtomType, 'angleAtom2Type': secondAtomType, 'angleAtom3Type': thirdAtomType})
 				sino_angle += 1
 
-	return angleInfo
+	return angleInfo, angleTypeArr
 
 def createDihedrals (atomInfo, dihedralInfo, angleInfo, bondInfo):
 	# dihInfo contains sino, dihType, dihAtom1, dihAtom2, dihAtom3, dihAtom4, dihAtom1Type, dihAtom2Type, dihAtom3Type, dihAtom4Type
@@ -182,37 +187,94 @@ def createDihedrals (atomInfo, dihedralInfo, angleInfo, bondInfo):
 				dihedralInfo.append ({'sino': sino_dih, 'dihType': dihType, 'dihAtom1': angleInfo [x]['angleAtom1'], 'dihAtom2': angleInfo [x]['angleAtom2'], 'dihAtom3': angleInfo [x]['angleAtom3'], 'dihAtom4': angleInfo [y]['angleAtom3'], 'dihAtom1Type': firstAtomType, 'dihAtom2Type': secondAtomType, 'dihAtom3Type': thirdAtomType, 'dihAtom4Type': fourthAtomType})
 				sino_dih += 1
 
-	return dihedralInfo
+	return dihedralInfo, dihTypeArr
 
-def printDataFile (atomInfo, bondInfo, angleInfo, dihedralInfo):
+def createImpropers (atomInfo, bondInfo, angleInfo, dihedralInfo, improperInfo):
+	improperTypeArr = []
+	improperTypeArr.append ({'atom1': 0, 'atom2': 0, 'atom3': 0, 'atom4': 0, 'improperType': 0})
+
+	return improperInfo, improperTypeArr
+
+def printDataFile (atomInfo, atomTypeArr, bondInfo, bondTypeArr, angleInfo, angleTypeArr, dihedralInfo, dihTypeArr, improperInfo, improperTypeArr):
+
+	nAtoms = len (atomInfo)
+	nBonds = len (bondInfo)
+	nAngles = len (angleInfo)
+	nDihedrals = len (dihedralInfo)
+	nImpropers = len (improperInfo)
+
+	nAtomTypes = len (atomTypeArr)
+	nBondTypes = len (bondTypeArr) - 1
+	nAngleTypes = len (angleTypeArr) - 1
+	nDihedralTypes = len (dihTypeArr) - 1
+	nImproperTypes = 0
+
+	coords_x = []
+	coords_y = []
+	coords_z = []
+
 	with open ("atomEntries.output", "w") as file:
 		for atomLine in atomInfo:
-			file.write ("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format (atomLine ['sino'], atomLine ['molType'], atomLine ['atomType'], atomLine ['charge'], atomLine ['x'], atomLine ['y'], atomLine ['z']))
+			file.write ("\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format (atomLine ['sino'], atomLine ['molType'], atomLine ['atomType'], atomLine ['charge'], atomLine ['x'], atomLine ['y'], atomLine ['z']))
+			coords_x.append (atomLine ['x'])
+			coords_y.append (atomLine ['y'])
+			coords_z.append (atomLine ['z'])
+
+	coords_xlo = min (coords_x) - 0.5 * min (coords_x)
+	coords_xhi = max (coords_x) + 0.5 * max (coords_x)
+	coords_ylo = min (coords_y) - 0.5 * min (coords_y)
+	coords_yhi = max (coords_y) + 0.5 * max (coords_y)
+	coords_zlo = min (coords_z) - 0.5 * min (coords_z)
+	coords_zhi = max (coords_z) + 0.5 * max (coords_z)
 
 	with open ("bondEntries.output", "w") as file:
 		for bondLine in bondInfo:
-			file.write ("{}\t{}\t{}\t{}\n".format (bondLine ['sino'], bondLine ['bondType'], bondLine ['bondAtom1'], bondLine ['bondAtom2']))
+			file.write ("\t{}\t{}\t{}\t{}\n".format (bondLine ['sino'], bondLine ['bondType'], bondLine ['bondAtom1'], bondLine ['bondAtom2']))
 
 	with open ("angleEntries.output", "w") as file:
 		for angleLine in angleInfo:
-			file.write ("{}\t{}\t{}\t{}\t{}\n".format (angleLine ['sino'], angleLine ['angleType'], angleLine ['angleAtom1'], angleLine ['angleAtom2'], angleLine ['angleAtom3']))
+			file.write ("\t{}\t{}\t{}\t{}\t{}\n".format (angleLine ['sino'], angleLine ['angleType'], angleLine ['angleAtom1'], angleLine ['angleAtom2'], angleLine ['angleAtom3']))
 
 	with open ("dihedralEntries.output", "w") as file:
-		for dihedralLine in dihedralEntries:
-			file.write ("{}\t{}\t{}\t{}\t{}\t{}\n".format (dihedralLine ['sino'], dihedralLine ['dihType'], dihedralLine ['dihAtom1'], dihedralLine ['dihAtom2'], dihedralLine ['dihAtom3'], dihedralLine ['dihAtom4']))
+		for dihedralLine in dihedralInfo:
+			file.write ("\t{}\t{}\t{}\t{}\t{}\t{}\n".format (dihedralLine ['sino'], dihedralLine ['dihType'], dihedralLine ['dihAtom1'], dihedralLine ['dihAtom2'], dihedralLine ['dihAtom3'], dihedralLine ['dihAtom4']))
+
+	with open ("output.data", "w") as file:
+		file.write ("Created by you v1.8.1 on today, this month, this year, current time.\n\n\t{}\tatoms\n\t{}\tbonds\n\t{}\tangles\n\t{}\tdihedrals\n\t{}\timpropers\n\n\t{} atom types\n\t{} bond types\n\t{} angle types\n\t{} dihedral types\n\t{} improper types\n\n\t{}\t{}\txlo xhi\n\t{}\t{}\tylo yhi\n\t{}\t{}\tzlo zhi\n\nMasses\n\n\t1\t13.0907\t#CG311 CH\n\t2\t14.1707\t#CG321 CH2\n\t3\t15.2507\t#CG331 CH3\n\nAtoms\n\n".format (nAtoms, nBonds, nAngles, nDihedrals, nImpropers, nAtomTypes, nBondTypes, nAngleTypes, nDihedralTypes, nImproperTypes, coords_xlo, coords_xhi, coords_ylo, coords_yhi, coords_zlo, coords_zhi))
+
+		for atomLine in atomInfo:
+			file.write ("\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format (atomLine ['sino'], atomLine ['molType'], atomLine ['atomType'], atomLine ['charge'], atomLine ['x'], atomLine ['y'], atomLine ['z']))
+
+		file.write ("\nBonds\n\n")
+		for bondLine in bondInfo:
+			file.write ("\t{}\t{}\t{}\t{}\n".format (bondLine ['sino'], bondLine ['bondType'], bondLine ['bondAtom1'], bondLine ['bondAtom2']))
+
+		file.write ("\nAngles\n\n")
+		for angleLine in angleInfo:
+			file.write ("\t{}\t{}\t{}\t{}\t{}\n".format (angleLine ['sino'], angleLine ['angleType'], angleLine ['angleAtom1'], angleLine ['angleAtom2'], angleLine ['angleAtom3']))
+
+		file.write ("\nDihedrals\n\n")
+		for dihedralLine in dihedralInfo:
+			file.write ("\t{}\t{}\t{}\t{}\t{}\t{}\n".format (dihedralLine ['sino'], dihedralLine ['dihType'], dihedralLine ['dihAtom1'], dihedralLine ['dihAtom2'], dihedralLine ['dihAtom3'], dihedralLine ['dihAtom4']))
+
+		# file.write ("\nImpropers\n\n")
+
+
 
 def main():
 	atomInfo = []
 	bondInfo = []
 	angleInfo = []
 	dihedralInfo = []
+	improperInfo = []
 
-	atomInfo = readAtomInfo ("atomEntries.testing", atomInfo)
-	bondInfo = createBonds (atomInfo, bondInfo)
-	angleInfo = createAngles (atomInfo, angleInfo, bondInfo)
-	dihedralInfo = createDihedrals (atomInfo, dihedralInfo, angleInfo, bondInfo)
+	atomInfo, atomTypeArr = readAtomInfo ("atomEntries.testing", atomInfo)
+	bondInfo, bondTypeArr = createBonds (atomInfo, bondInfo)
+	angleInfo, angleTypeArr = createAngles (atomInfo, angleInfo, bondInfo)
+	dihedralInfo, dihTypeArr = createDihedrals (atomInfo, dihedralInfo, angleInfo, bondInfo)
+	improperInfo, improperTypeArr = createImpropers (atomInfo, bondInfo, angleInfo, dihedralInfo, improperInfo)
 
-	printDataFile (atomInfo, bondInfo, angleInfo, dihedralInfo)
+	printDataFile (atomInfo, atomTypeArr, bondInfo, bondTypeArr, angleInfo, angleTypeArr, dihedralInfo, dihTypeArr, improperInfo, improperTypeArr)
 
 	# for angle in angleInfo:
 	# 	print (angle)

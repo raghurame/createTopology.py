@@ -1,5 +1,6 @@
 from time import sleep
 import decimal
+from itertools import combinations
 
 def extract_numbers (line):
 	lineString = line.replace ("\t", ",").replace (" ", ",").replace ("\n", "")
@@ -79,7 +80,7 @@ def createAngles (atomInfo, angleInfo, bondInfo):
 	angleTypeArr = []
 	sino_angle = 1
 
-	# Initializing connectedAtoms dict
+	# Initializing connectedAtoms dict of lists
 	connectedAtoms = {}
 	for atomLine in atomInfo:
 		connectedAtoms [atomLine ['sino']] = []
@@ -87,23 +88,40 @@ def createAngles (atomInfo, angleInfo, bondInfo):
 	angleTypeArr.append ({'atom1': 0, 'atom2': 0, 'atom3': 0, 'angleType': 0})
 
 	def findConnectedAtoms (concernedBondAtom, primaryConnect, bondInfo, connectedAtoms):
-		connectedAtoms [concernedBondAtom].append (primaryConnect)
-		connectedAtoms [primaryConnect].append (concernedBondAtom)
+		if (primaryConnect not in connectedAtoms [concernedBondAtom]):
+			connectedAtoms [concernedBondAtom].append (primaryConnect)
+		if (concernedBondAtom not in connectedAtoms [primaryConnect]):
+			connectedAtoms [primaryConnect].append (concernedBondAtom)
+
 		for bondLine in bondInfo:
-			if (bondLine ['bondAtom1'] == concernedBondAtom and bondLine ['bondAtom2'] != primaryConnect and bondLine ['bondAtom2'] not in connectedAtoms [concernedBondAtom]):
+			if ((bondLine ['bondAtom1'] == concernedBondAtom) and (bondLine ['bondAtom2'] not in connectedAtoms [concernedBondAtom])):
 				connectedAtoms [concernedBondAtom].append (bondLine ['bondAtom2'])
 				connectedAtoms [concernedBondAtom].sort ()
-			if (bondLine ['bondAtom2'] == concernedBondAtom and bondLine ['bondAtom1'] != primaryConnect and bondLine ['bondAtom1'] not in connectedAtoms [concernedBondAtom]):
+			if ((bondLine ['bondAtom2'] == concernedBondAtom) and (bondLine ['bondAtom1'] not in connectedAtoms [concernedBondAtom])):
 				connectedAtoms [concernedBondAtom].append (bondLine ['bondAtom1'])
 				connectedAtoms [concernedBondAtom].sort ()
 
 		return connectedAtoms
 
 	for bondLine in bondInfo:
-		print (bondLine ['bondAtom1'], bondLine ['bondAtom2'])
 		connectedAtoms = findConnectedAtoms (bondLine ['bondAtom1'], bondLine ['bondAtom2'], bondInfo, connectedAtoms)
 	
-	print (connectedAtoms)
+	# print (connectedAtoms)
+
+	# Creating angleInfo
+	for atom in connectedAtoms:
+		if (len (connectedAtoms [atom]) > 1):
+			comb = combinations (connectedAtoms [atom], 2)
+			for i in list (comb):
+				firstAtomType = atomInfo [int (i [0]) - 1]['atomType']
+				secondAtomType = atomInfo [int (atom) - 1]['atomType']
+				thirdAtomType = atomInfo [int (i [1]) - 1]['atomType']
+				angleInfo.append ({'sino': sino_angle, 'angleType': 0, 'angleAtom1': i[0], 'angleAtom2': atom, 'angleAtom3': i[1], 'angleAtom1Type': firstAtomType, 'angleAtom2Type': secondAtomType, 'angleAtom3Type': thirdAtomType})
+			# print (atom, connectedAtoms [atom])
+
+	for angle in angleInfo:
+		print (angle)
+		sleep (1)
 
 	return angleInfo
 

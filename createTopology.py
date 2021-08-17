@@ -184,6 +184,23 @@ def createDihedrals (atomInfo, dihedralInfo, angleInfo, bondInfo):
 
 	return dihedralInfo
 
+def printDataFile (atomInfo, bondInfo, angleInfo, dihedralInfo):
+	with open ("atomEntries.output", "w") as file:
+		for atomLine in atomInfo:
+			file.write ("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format (atomLine ['sino'], atomLine ['molType'], atomLine ['atomType'], atomLine ['charge'], atomLine ['x'], atomLine ['y'], atomLine ['z']))
+
+	with open ("bondEntries.output", "w") as file:
+		for bondLine in bondInfo:
+			file.write ("{}\t{}\t{}\t{}\n".format (bondLine ['sino'], bondLine ['bondType'], bondLine ['bondAtom1'], bondLine ['bondAtom2']))
+
+	with open ("angleEntries.output", "w") as file:
+		for angleLine in angleInfo:
+			file.write ("{}\t{}\t{}\t{}\t{}\n".format (angleLine ['sino'], angleLine ['angleType'], angleLine ['angleAtom1'], angleLine ['angleAtom2'], angleLine ['angleAtom3']))
+
+	with open ("dihedralEntries.output", "w") as file:
+		for dihedralLine in dihedralEntries:
+			file.write ("{}\t{}\t{}\t{}\t{}\t{}\n".format (dihedralLine ['sino'], dihedralLine ['dihType'], dihedralLine ['dihAtom1'], dihedralLine ['dihAtom2'], dihedralLine ['dihAtom3'], dihedralLine ['dihAtom4']))
+
 def main():
 	atomInfo = []
 	bondInfo = []
@@ -195,13 +212,15 @@ def main():
 	angleInfo = createAngles (atomInfo, angleInfo, bondInfo)
 	dihedralInfo = createDihedrals (atomInfo, dihedralInfo, angleInfo, bondInfo)
 
+	printDataFile (atomInfo, bondInfo, angleInfo, dihedralInfo)
+
 	# for angle in angleInfo:
 	# 	print (angle)
 	# 	sleep (1)
 
-	for dihedralLine in dihedralInfo:
-		print (dihedralLine)
-		sleep (1)
+	# for dihedralLine in dihedralInfo:
+	# 	print (dihedralLine)
+	# 	sleep (1)
 
 if __name__ == '__main__':
 	main()
